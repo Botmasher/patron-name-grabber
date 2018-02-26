@@ -1,50 +1,54 @@
-# featured names
-patrons_0 = \
-"""Sample Name
+import math
+
+patron_names = \
+"""Name One
+Name Two
 Another Name
-Third Name
 """
 
-patrons_1 = \
-"""Sample Name
-Another Name
-Third Name
-"""
+# TODO range over rows to print out exact number of names per row
+# TODO option to cut or replace final final delimiter (the one at the end of all batches)
 
-delimiter = ", "
+def lists_from_lines(multiline_string, splitter="\n", delimiter=", ", groups=1):
+	"""Split and collect string lines into one or more lists"""
+	textlines = multiline_string.split("\n")
+	teststr = "xyz"
+	formatted_list = []
 
-# build lists for display
-def cut_and_format_patron_list(patrons_string, splitter="\n", delimiter=", "):
-	nameset = patrons_string.split("\n")
-	nameset_center = int(len(nameset) * 0.5) - 1
-	# split list in half and append two csv strings
-	patron_lists = []
-	patron_lists.append(delimiter.join(nameset[0:nameset_center]))
-	patron_lists.append(delimiter.join(nameset[nameset_center:len(nameset)-1]))
-	return patron_lists
+	i_cut = 0
+	for group_n in range(1, groups+1):
+		i_prev = i_cut
+		if group_n < groups:
+			i_cut = int(math.ceil((group_n / groups) * len(textlines)))
+		else:
+			i_cut = len(textlines)-1 		# to end, ignoring last newline
+		new_group = delimiter.join(textlines[i_prev : i_cut]).strip()
+		formatted_list.append(new_group)
 
-patronlist_0, patronlist_1 = cut_and_format_patron_list(patrons_0)
-patronlist_2, patronlist_3 = cut_and_format_patron_list(patrons_1)
+	formatted_lines = {
+		'list': formatted_list,
+		'delimiter': delimiter,
+		'source': {
+			'text': multiline_string,
+			'split_by': splitter
+		}
+	}
+	return formatted_lines
 
-print("\n--- FORMAT AND DISPLAY PATRON NAMES LISTS ---")
-print("Initial list length: %s" % ( len(patrons_0.split("\n")) ))
-print("Cut list length: %s " % (len(patronlist_0.split(", ")) + len(patronlist_1.split(", "))) )
-print("\n")
+def print_patrons(formatted_batches, row_length=None, delimiter=", ", use_final_delimiter=False, source_names=None):
+	"""Take a list of already-delimited patron name batches and print them group by group"""
+	print_lns = []
+	print_lns.append("\n--- FORMATTED PATRON NAMES ---")
+	if source_names is not None: print_lns.append("Source list length: %s" % len(patron_names.split("\n")))
+	for i in range(len(formatted_batches)):
+		print_lns.append("\n---- LIST %s ---" % (i+1))
+		print_lns.append("(%s names)\n" % len(formatted_batches[i].split(delimiter)))
+		patron_names_group = formatted_batches[i]+delimiter if use_final_delimiter == True else formatted_batches[i]
+		if len(formatted_batches[i]) < 1: patron_names_group = ""
+		print_lns.append(patron_names_group)
+	print_lns.append("\n")
+	for ln in print_lns: print(ln)
+	return print_lns
 
-def print_patrons(delimited_patrons_string, list_index, row_length, delimiter=", ", use_final_delimiter=True):
-	final_delimiter = ", " if use_final_delimiter else ""
-	print("---- LIST %s ---" % list_index)
-	#for patron in delimited_string.split(delimiter): print(patron)
-	patrons = delimited_patrons_string.split(delimiter)
-	# divide into and check total patrons count to know how many chunks are being iterated thru
-	 	# - it's leaving straggling extra lines too many commas
-	for i in range(row_length):
-		row = delimiter.join(patrons[i*row_length:i*row_length + row_length]) + final_delimiter
-		row is not None and row != delimiter and print(row)
-	#print("%s%s" % (delimited_string, final_delimiter))
-	print("\n")
-
-print_patrons(patronlist_0, 0, row_length=8)
-print_patrons(patronlist_1, 1, row_length=8)
-print_patrons(patronlist_2, 2, row_length=12)
-print_patrons(patronlist_3, 3, row_length=12, use_final_delimiter=False)
+formatted_patrons = lists_from_lines(patron_names, delimiter=", ", groups=4)
+print_patrons(formatted_patrons['list'], delimiter=formatted_patrons['delimiter'], use_final_delimiter=True)
